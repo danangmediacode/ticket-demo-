@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Ticket – Hội nghị Novotel Đà Nẵng</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --border: #1e2330;
+    --accent: #00e5a0;
+    --accent2: #0ea5e9;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,12,15,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .header-brand { display: flex; align-items: center; gap: 10px; }
+  .header-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .header-title { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+  .header-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.2);
+    padding: 4px 10px; border-radius: 99px;
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite; }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 14px 20px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONTENT */
+  .content { padding: 24px; max-width: 960px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* STATS ROW */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .stat-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-family: var(--mono); font-size: 32px; font-weight: 600; }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.blue { color: var(--accent2); }
+  .stat-value.yellow { color: var(--warn); }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;
+  }
+  .progress-label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .progress-bar-bg { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-bar-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 0 8px rgba(0,229,160,0.4);
+    width: 0%;
+  }
+
+  /* CHECK-IN PANEL */
+  .checkin-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .checkin-icon { font-size: 48px; margin-bottom: 16px; }
+  .checkin-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  .checkin-box p { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+  .input-row { display: flex; gap: 10px; max-width: 420px; margin: 0 auto; }
+  .ticket-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    letter-spacing: 0.06em;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .ticket-input:focus { border-color: var(--accent); }
+  .ticket-input::placeholder { color: var(--muted); }
+  .btn-scan {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-scan:hover { background: #00ffb3; transform: translateY(-1px); }
+  .btn-scan:active { transform: translateY(0); }
+
+  /* RESULT TOAST */
+  .result-toast {
+    max-width: 420px; margin: 16px auto 0;
+    border-radius: 10px; padding: 16px 20px;
+    display: none; animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .result-toast.success { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.3); }
+  .result-toast.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+  .result-toast.warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+  .toast-icon { font-size: 24px; margin-bottom: 6px; }
+  .toast-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .toast-sub { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* RECENT CHECK-INS */
+  .section-label {
+    font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 12px;
+  }
+  .checkin-feed { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+  .feed-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px;
+    display: flex; align-items: center; gap: 12px;
+    animation: slideUp 0.3s ease;
+  }
+  .feed-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: var(--bg); flex-shrink: 0;
+  }
+  .feed-name { font-size: 13px; font-weight: 600; }
+  .feed-code { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .feed-time { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* DANH SÁCH VÉ */
+  .search-input {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; font-family: var(--mono); font-size: 13px;
+    color: var(--text); outline: none; margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent2); }
+  .ticket-grid { display: flex; flex-direction: column; gap: 8px; }
+  .ticket-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .ticket-row:hover { border-color: var(--accent2); background: rgba(14,165,233,0.05); }
+  .ticket-row.checked { border-color: var(--accent); background: rgba(0,229,160,0.04); }
+  .ticket-num { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 24px; flex-shrink: 0; }
+  .ticket-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .ticket-code { font-family: var(--mono); font-size: 11px; color: var(--accent2); }
+  .ticket-status {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    padding: 3px 8px; border-radius: 99px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .ticket-status.unused { color: var(--muted); background: rgba(100,116,139,0.1); border: 1px solid rgba(100,116,139,0.2); }
+  .ticket-status.used { color: var(--accent); background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); }
+
+  /* MODAL QR */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(4px); z-index: 200;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px; text-align: center;
+    max-width: 320px; width: 90%;
+    animation: slideUp 0.3s ease;
+  }
+  .modal-name { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .modal-code { font-family: var(--mono); font-size: 12px; color: var(--accent2); margin-bottom: 20px; }
+  #modal-qr { display: flex; justify-content: center; margin-bottom: 16px; }
+  #modal-qr img, #modal-qr canvas { border-radius: 8px; border: 4px solid white; }
+  .modal-event { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .modal-time { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .btn-close {
+    margin-top: 20px; background: var(--border); color: var(--text);
+    border: none; border-radius: 8px; padding: 10px 24px;
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-close:hover { background: #2a3040; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .content { padding: 16px; }
+    .stat-value { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <div class="header-dot"></div>
+    <div>
+      <div class="header-title">QR Ticket System</div>
+      <div class="header-meta">Novotel Đà Nẵng · 08:00 – 12:30</div>
+    </div>
+  </div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    LIVE
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</div>
+  <div class="tab" onclick="switchTab('checkin')">📱 Check-in</div>
+  <div class="tab" onclick="switchTab('tickets')">🎫 Danh sách vé</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="content">
+<div id="panel-dashboard" class="panel active">
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Đã vào</div>
+      <div class="stat-value green" id="count-in">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Chưa vào</div>
+      <div class="stat-value yellow" id="count-out">30</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tổng vé</div>
+      <div class="stat-value blue">30</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Tiến độ check-in</span>
+      <span id="progress-pct" style="color:var(--accent)">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Lịch sử check-in gần nhất</div>
+  <div class="checkin-feed" id="feed">
+    <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">
+      Chưa có check-in nào. Thử tab <strong style="color:var(--text)">Check-in</strong> →
+    </div>
+  </div>
+</div>
+
+<!-- CHECK-IN -->
+<div id="panel-checkin" class="panel">
+  <div class="checkin-box">
+    <div class="checkin-icon">📲</div>
+    <h2>Quét / Nhập mã vé</h2>
+    <p>Nhập mã vé hoặc scan QR từ email/Zalo của khách</p>
+    <div class="input-row">
+      <input class="ticket-input" id="code-input" placeholder="VD: DNK-001" maxlength="10"
+        onkeydown="if(event.key==='Enter')verifyTicket()" />
+      <button class="btn-scan" onclick="verifyTicket()">✓ Verify</button>
+    </div>
+    <div class="result-toast" id="result-toast">
+      <div class="toast-icon" id="toast-icon"></div>
+      <div class="toast-name" id="toast-name"></div>
+      <div class="toast-sub" id="toast-sub"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Check-in gần đây</div>
+  <div class="checkin-feed" id="feed2"></div>
+</div>
+
+<!-- DANH SÁCH VÉ -->
+<div id="panel-tickets" class="panel">
+  <input class="search-input" id="search" placeholder="🔍 Tìm tên hoặc mã vé..." oninput="renderList()" />
+  <div class="ticket-grid" id="ticket-grid"></div>
+</div>
+</div>
+
+<!-- MODAL QR -->
+<div class="modal-overlay" id="modal" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-name" id="modal-name"></div>
+    <div class="modal-code" id="modal-code"></div>
+    <div id="modal-qr"></div>
+    <div class="modal-event">🏨 Novotel Đà Nẵng Premier Han River</div>
+    <div class="modal-time">📅 08:00 – 12:30 | Mang theo Laptop / iPad</div>
+    <button class="btn-close" onclick="closeModal()">Đóng</button>
+  </div>
+</div>
+
+<script>
+const NAMES = [
+  "Nguyễn Minh Tuấn","Trần Thị Lan","Lê Văn Hùng","Phạm Thu Hà","Hoàng Đức Nam",
+  "Vũ Thị Mai","Đặng Quốc Anh","Bùi Thị Hoa","Ngô Văn Thắng","Lý Thị Ngọc",
+  "Đinh Minh Khoa","Trương Thị Yến","Phan Văn Long","Mai Thị Linh","Đỗ Hữu Phúc",
+  "Cao Thị Diệu","Nguyễn Văn Đạt","Trần Thị Bích","Lê Quang Hải","Phạm Thị Vân",
+  "Hoàng Ngọc Sơn","Vũ Văn Tú","Đặng Thị Kim","Bùi Minh Trí","Ngô Thị Phương",
+  "Lý Văn Cường","Đinh Thị Thu","Trương Minh Đức","Phan Thị Thanh","Mai Văn Khải"
+];
+
+const tickets = NAMES.map((name, i) => ({
+  id: i + 1,
+  name,
+  code: `DNK-${String(i + 1).padStart(3, '0')}`,
+  status: 'unused',
+  checkedAt: null
+}));
+
+const recentLogs = [];
+
+function updateStats() {
+  const checked = tickets.filter(t => t.status === 'used').length;
+  const pct = Math.round(checked / tickets.length * 100);
+  document.getElementById('count-in').textContent = checked;
+  document.getElementById('count-out').textContent = tickets.length - checked;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+function renderFeed(feedId) {
+  const feed = document.getElementById(feedId);
+  if (recentLogs.length === 0) {
+    feed.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Chưa có check-in nào.</div>`;
+    return;
+  }
+  feed.innerHTML = recentLogs.slice(0, 10).map(log => `
+    <div class="feed-item">
+      <div class="feed-avatar">${log.name[0]}</div>
+      <div>
+        <div class="feed-name">${log.name}</div>
+        <div class="feed-code">${log.code}</div>
+      </div>
+      <div class="feed-time">${log.time}</div>
+    </div>
+  `).join('');
+}
+
+function verifyTicket() {
+  const input = document.getElementById('code-input');
+  const code = input.value.trim().toUpperCase();
+  if (!code) return;
+
+  const toast = document.getElementById('result-toast');
+  const icon = document.getElementById('toast-icon');
+  const name = document.getElementById('toast-name');
+  const sub = document.getElementById('toast-sub');
+
+  const ticket = tickets.find(t => t.code === code);
+
+  toast.className = 'result-toast';
+  toast.style.display = 'block';
+
+  if (!ticket) {
+    toast.classList.add('error');
+    icon.textContent = '❌';
+    name.textContent = 'Mã vé không tồn tại';
+    sub.textContent = code;
+  } else if (ticket.status === 'used') {
+    toast.classList.add('warn');
+    icon.textContent = '⚠️';
+    name.textContent = ticket.name;
+    sub.textContent = `Đã check-in lúc ${ticket.checkedAt}`;
+  } else {
+    const now = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+    ticket.status = 'used';
+    ticket.checkedAt = now;
+
+    recentLogs.unshift({ name: ticket.name, code: ticket.code, time: now });
+
+    toast.classList.add('success');
+    icon.textContent = '✅';
+    name.textContent = ticket.name;
+    sub.textContent = `${ticket.code} · Check-in lúc ${now}`;
+
+    updateStats();
+    renderFeed('feed');
+    renderFeed('feed2');
+    renderList();
+  }
+
+  input.value = '';
+  input.focus();
+
+  setTimeout(() => { toast.style.display = 'none'; }, 3500);
+}
+
+function renderList() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const grid = document.getElementById('ticket-grid');
+  const filtered = tickets.filter(t =>
+    t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q)
+  );
+  grid.innerHTML = filtered.map(t => `
+    <div class="ticket-row ${t.status === 'used' ? 'checked' : ''}" onclick="showQR(${t.id})">
+      <div class="ticket-num">${t.id}</div>
+      <div class="ticket-name">${t.name}</div>
+      <div class="ticket-code">${t.code}</div>
+      <div class="ticket-status ${t.status}">${t.status === 'used' ? '✓ Đã vào' : 'Chờ'}</div>
+    </div>
+  `).join('');
+}
+
+let qrInstance = null;
+
+function showQR(id) {
+  const ticket = tickets.find(t => t.id === id);
+  if (!ticket) return;
+
+  document.getElementById('modal-name').textContent = ticket.name;
+  document.getElementById('modal-code').textContent = ticket.code;
+
+  const qrDiv = document.getElementById('modal-qr');
+  qrDiv.innerHTML = '';
+
+  if (qrInstance) { qrInstance.clear(); qrInstance = null; }
+
+  qrInstance = new QRCode(qrDiv, {
+    text: ticket.code,
+    width: 200,
+    height: 200,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'tickets') renderList();
+}
+
+// Init
+updateStats();
+renderFeed('feed');
+document.getElementById('code-input').focus();
+</script>
+</body>
+</html>
